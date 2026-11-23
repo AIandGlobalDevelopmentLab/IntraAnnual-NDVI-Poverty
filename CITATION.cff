@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the paper."
+title: "How much does the growing season tell us about wealth? Intra-annual vegetation and satellite-based poverty mapping in Africa"
+type: software
+authors:
+  - given-names: Mohammad
+    family-names: Kakooei
+  - given-names: Klaudia
+    family-names: Solska
+  - given-names: Adel
+    family-names: Daoud
+repository-code: "https://github.com/AIandGlobalDevelopmentLab/IntraAnnual-NDVI-wavelet-Poverty"
+license: MIT
+keywords:
+  - poverty mapping
+  - intra-annual NDVI
+  - International Wealth Index
+  - nighttime lights
+  - spatial cross-validation
+  - Africa

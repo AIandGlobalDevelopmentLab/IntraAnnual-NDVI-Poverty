@@ -1,0 +1,36 @@
+start,family,combo,models,best model,R2,tied with the best,clearly worse
+pretrained,ten_models,L+NL,12,ResNet-18 + SatCLIP,0.7546542746140792,,11
+pretrained,ten_models,L+NL+wavelet,12,ResNet-18 + SatCLIP,0.754153383360024,,11
+pretrained,ten_models,L+NL+DFT,12,ResNet-18 + SatCLIP,0.7589905793503895,,11
+pretrained,ten_models,L+NL+peak:pixel11/wavelet6,12,ResNet-18 + SatCLIP,0.757653936641493,,11
+pretrained,ten_models,L+NL+TT:cyclic,12,ResNet-18 + SatCLIP,0.7586368214668023,,11
+scratch,ten_models,L+NL,12,ResNet-18 + SatCLIP,0.7573148459139721,,11
+scratch,ten_models,L+NL+wavelet,12,ResNet-18 + SatCLIP,0.7581294249165054,,11
+scratch,ten_models,L+NL+DFT,12,ResNet-18 + SatCLIP,0.7551949041241385,,11
+scratch,ten_models,L+NL+peak:pixel11/wavelet6,12,ResNet-18 + SatCLIP,0.7538388811992563,,11
+scratch,ten_models,L+NL+TT:cyclic,12,ResNet-18 + SatCLIP,0.7528247530831954,,11
+scratch,table2,L+NL,2,ResNet-18 finetune (05),0.7008172929997869,,1
+scratch,table2,L+NL+wavelet,2,ResNet-18 finetune (05),0.6943945335611618,,1
+scratch,table2,L+NL+NDVI,2,ResNet-18 finetune (05),0.7171746243239296,,1
+scratch,table2,L+NL+LFC_min,2,ResNet-18 finetune (05),0.6997779081009587,,1
+scratch,table2,L+NL+LFC_max,2,ResNet-18 finetune (05),0.7115435616083756,,1
+scratch,table2,L+NL+LFC_mean,2,ResNet-18 finetune (05),0.6935741547023097,,1
+scratch,table2,L+NL+HFC_min,2,ResNet-18 finetune (05),0.6920818182289135,,1
+scratch,table2,L+NL+HFC_max,2,ResNet-18 finetune (05),0.6989398327615534,,1
+scratch,table2,L+NL+HFC_mean,2,ResNet-18 finetune (05),0.6940202507098661,,1
+scratch,ridge,L+NL+wavelet,2,"ridge, nl08_landsat09",0.7256400489558174,,1
+scratch,ridge,L+NL+LFC_min,2,"ridge, nl08_landsat09",0.7081824523634416,,1
+scratch,ridge,L+NL+LFC_max,2,"ridge, nl08_landsat09",0.7024338407096538,,1
+scratch,ridge,L+NL+LFC_mean,2,"ridge, nl08_landsat09",0.7171826782172656,,1
+scratch,ridge,L+NL+HFC_min,2,"ridge, nl08_landsat09",0.7006179040406033,"ridge, nl08_vit10_DMSP_VIIRS_finetune",0
+scratch,ridge,L+NL+HFC_mean,2,"ridge, nl08_landsat09",0.6959277314319028,"ridge, nl08_vit10_DMSP_VIIRS_finetune",0
+scratch,ridge,L+NL,2,"ridge, nl08_vit10_DMSP_VIIRS_finetune",0.6937598940048664,"ridge, nl08_landsat09",0
+scratch,ridge,L+NL+HFC_max,2,"ridge, nl08_vit10_DMSP_VIIRS_finetune",0.6965120661490773,"ridge, nl08_landsat09",0
+scratch,single,L,2,ResNet-18 on Landsat (07),0.6488178786689325,,1
+scratch,single,L+HFC_max,2,ResNet-18 on Landsat (07),0.6524827715157736,,1
+scratch,single,L+HFC_mean,2,ResNet-18 on Landsat (07),0.6517724072819494,,1
+scratch,single,L+HFC_min,2,ResNet-18 on Landsat (07),0.648490092435468,,1
+scratch,single,L+LFC_max,2,ResNet-18 on Landsat (07),0.6473234703420081,,1
+scratch,single,L+LFC_mean,2,ResNet-18 on Landsat (07),0.6546099963083573,,1
+scratch,single,L+LFC_min,2,ResNet-18 on Landsat (07),0.6515591359622936,,1
+scratch,single,L+wavelet,2,ResNet-18 on Landsat (07),0.6697690876271372,,1

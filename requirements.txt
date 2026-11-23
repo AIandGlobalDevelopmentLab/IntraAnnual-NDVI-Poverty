@@ -1,0 +1,24 @@
+# Python 3.10 or later. Install PyTorch for your CUDA version first (https://pytorch.org).
+torch
+torchvision
+torchgeo            # Swin v2-B, ViT-S/16, U-Net, SatCLIP, MOSAIKS (RCF) and OlmoEarth weights and models
+timm
+segmentation-models-pytorch
+numpy
+pandas
+scipy
+scikit-learn
+matplotlib
+tqdm
+PyWavelets
+rasterio
+earthengine-api     # notebook iwi/01
+requests
+retry
+folium              # optional: interactive fold map in notebook iwi/03
+kgcpy               # Koppen-Geiger classes in analysis/subset_gains.py
+jupyter
+nbconvert
+
+# OlmoEarth (notebooks 11-15) is installed separately, without its dependencies:
+#   pip install --no-deps --target /path/to/python_packages olmoearth-pretrain-minimal==0.1.5 universal-pathlib pathlib-abc

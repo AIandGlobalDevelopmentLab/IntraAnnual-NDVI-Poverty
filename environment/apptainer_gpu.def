@@ -1,0 +1,143 @@
+Bootstrap: docker
+From: nvcr.io/nvidia/pytorch:26.05-py3
+
+%labels
+    Description PyTorch + geospatial stack + JupyterLab, used for the runs of this repository
+    Version 1.0
+
+%post
+    # Fail immediately on any error instead of continuing to a confusing
+    # downstream failure.
+    set -eux
+
+    export DEBIAN_FRONTEND=noninteractive
+
+    # ---------------------------------------------------------------
+    # System packages
+    # ---------------------------------------------------------------
+    apt-get update
+    apt-get install -y --no-install-recommends \
+        apt-transport-https \
+        ca-certificates \
+        curl \
+        gnupg \
+        git \
+        libgl1 \
+        libglib2.0-0
+
+    # ---------------------------------------------------------------
+    # Google Cloud CLI (gcloud, gsutil)
+    # apt-key is removed in Ubuntu 22.04+, so the signing key goes in
+    # /usr/share/keyrings and is referenced with signed-by.
+    # ---------------------------------------------------------------
+    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg \
+        | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
+
+    echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
+        > /etc/apt/sources.list.d/google-cloud-sdk.list
+
+    apt-get update
+    apt-get install -y --no-install-recommends google-cloud-cli
+
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+    # ---------------------------------------------------------------
+    # Python packages, installed in small groups so a conflict points
+    # at a specific line rather than one giant unresolvable set.
+    #
+    # torch / torchvision / torchaudio are deliberately NOT listed:
+    # the NGC base image ships tuned builds and reinstalling them
+    # can pull in a CPU-only wheel on top.
+    # ---------------------------------------------------------------
+    pip install --no-cache-dir --upgrade pip
+
+    # Notebook environment
+    pip install --no-cache-dir \
+        jupyterlab \
+        ipykernel \
+        ipywidgets \
+        jupyter-book
+
+    # Geospatial / raster
+    # fiona is deliberately omitted: no aarch64 wheel is published, so pip
+    # falls back to a source build that needs GDAL headers. geopandas 1.x
+    # uses pyogrio by default and does not require fiona.
+    pip install --no-cache-dir \
+        rasterio \
+        rioxarray \
+        rio-cogeo \
+        pyogrio \
+        geopandas \
+        stackstac \
+        planetary-computer \
+        earthaccess \
+        eotdl \
+        cartopy \
+        geemap \
+        earthengine-api \
+        scikit-gstat \
+        zarr \
+        h5netcdf \
+        tifffile
+
+    # ML / training utilities
+    pip install --no-cache-dir \
+        lightning \
+        torchgeo \
+        transformers \
+        einops \
+        vit-pytorch \
+        kornia \
+        lpips \
+        wandb \
+        torchdata \
+        'jsonargparse[signatures]>=4.26.1' \
+        typeshed-client
+
+    # Vision / imaging (headless OpenCV: no GUI libs, much smaller)
+    pip install --no-cache-dir \
+        opencv-python-headless \
+        scikit-image \
+        PyWavelets
+
+    # Analysis, stats, plotting
+    pip install --no-cache-dir \
+        scikit-learn \
+        matplotlib \
+        seaborn \
+        adjustText \
+        openpyxl \
+        retry \
+        ftfy \
+        regex \
+        pysyncon \
+        SyntheticControlMethods
+
+    # Model inspection helpers
+    pip install --no-cache-dir \
+        torchinfo \
+        torchsummary \
+        torchviz
+
+    # Clean up anything pip left behind
+    rm -rf /root/.cache/pip
+
+%environment
+    export LC_ALL=C.UTF-8
+    export LANG=C.UTF-8
+    export PATH=/usr/local/cuda/bin:$PATH
+    # Keep matplotlib and friends from writing into a read-only home
+    export MPLCONFIGDIR=/tmp/mpl
+    export PROJ_LIB=/usr/share/proj
+
+%runscript
+    # Default action: start JupyterLab. Override with `apptainer exec`.
+    exec jupyter lab --no-browser --ip=0.0.0.0 --port=8888 "$@"
+
+%test
+    set -e
+    python -c "import torch; print('torch', torch.__version__)"
+    python -c "import rasterio, geopandas, lightning; print('geo stack ok')"
+    python -c "import jupyterlab; print('jupyterlab ok')"
+    gcloud --version | head -n 1
