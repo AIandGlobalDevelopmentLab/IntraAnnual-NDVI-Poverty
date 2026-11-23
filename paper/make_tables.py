@@ -19,7 +19,6 @@ def e3(x, lo, hi, star=False, d=3):
 def pct(x, d=1):
     return m(100 * x, d)
 def sig(lo, hi): return (lo > 0) or (hi < 0)
-TGT = {'iwi': 'IWI', 'nl': 'NL'}
 SHORT = {'wavelet': 'Wavelet', 'DFT': 'Fourier', 'peak:pixel11/wavelet6': 'Peak-aligned', 'TT:cyclic': 'Transformer', 'mean4': 'Mean of four'}
 PANEL = {'scratch': 'From scratch', 'pretrained': 'Pretrained'}
 def two(x, lo, hi, star=False, extra=''):
@@ -35,18 +34,12 @@ START = {'scratch': 'Scratch', 'pretrained': 'Pretrained'}
 def t_accuracy(t):
     M = pd.read_csv(ev(t, 'overall_metrics.csv')); M = M[(M.family == 'ten_models') & (M.combo == REF[t])]
     P = pd.read_csv(ev(t, 'overall_pretrained_minus_scratch.csv')); P = P[(P.family == 'ten_models') & (P.combo == REF[t])]
-    per = pd.read_csv(ev('nl', 'overall_by_period.csv')) if t == 'nl' else None
     rows = []
     for k in LAB:
         r = {}
         for s in ['pretrained', 'scratch']:
             x = M[(M.model == k) & (M.start == s)].iloc[0]
-            if t == 'nl':
-                pp = per[(per.model == k) & (per.start == s) & (per.combo == 'L') & (per.family == 'ten_models')].set_index('period')['R2']
-                r2 = f'{x.R2:.3f} ({pp["DMSP"]:.3f}/{pp["VIIRS"]:.3f})'
-                r[s] = [r2, f'{x.RMSE:.2f}', f'{x.MAE:.3f}']
-            else:
-                r[s] = [f'{x.R2:.3f}', f'{x.RMSE:.2f}', f'{x.MAE:.2f}']
+            r[s] = [f'{x.R2:.3f}', f'{x.RMSE:.2f}', f'{x.MAE:.2f}']
             r[s + 'R2'] = x.R2
         p = P[P.model == k]
         if len(p) and k not in ('mlp', 'mosaiks', 'satclip_only'):
@@ -74,12 +67,12 @@ def t_newer(t):
         for k in ['eight: mean', 'vgg16bn']:
             q = S[(S.start == 'pretrained minus scratch') & (S.combo == c) & (S.quantity == k)].iloc[0]
             cells.append(two(q.estimate, q.low, q.high))
-        name = ('Landsat + NL' if t == 'iwi' else 'Landsat') if e is None else '+ ' + SHORT[e]
+        name = 'Landsat + NL' if e is None else '+ ' + SHORT[e]
         lines.append(f'{name} & ' + ' & '.join(cells) + ' \\\\')
     return '\n'.join(lines)
 
 # ------------------------------------------------------------------ encodings (X.3)
-IM = pd.read_csv(REV / 'iwi_mae.csv'); NM = pd.read_csv(ev('nl', 'mae_bootstrap.csv'))
+IM = pd.read_csv(REV / 'iwi_mae.csv')
 def t_enc(t):
     S = pd.read_csv(ev(t, 'summary_bootstrap.csv')); S = S[S.subset == 'all']
     M = pd.read_csv(ev(t, 'overall_metrics.csv')); M = M[M.family == 'ten_models']
@@ -93,10 +86,7 @@ def t_enc(t):
             mm = M[(M.start == s) & (M.combo == c) & (M.model.isin(NINE))]
             b = (mm['dR2 low'] > 0).sum(); w = (mm['dR2 high'] < 0).sum()
             bq = ((mm['dR2 low'] > 0) & (mm.q < 0.05)).sum(); wq = ((mm['dR2 high'] < 0) & (mm.q < 0.05)).sum()
-            if t == 'iwi':
-                a = IM[(IM.start == s) & (IM.enc == e) & (IM.subset == 'all')].iloc[0]; mae = two(a.dMAE, a.lo, a.hi)
-            else:
-                a = NM[(NM.start == s) & (NM.combo == c) & (NM.subset == 'all')].iloc[0]; mae = two(a.dMAE, a.low, a.high)
+            a = IM[(IM.start == s) & (IM.enc == e) & (IM.subset == 'all')].iloc[0]; mae = two(a.dMAE, a.lo, a.hi)
             cells = [SHORT[e], two(q.estimate, q.low, q.high), f'{b} / {w} ({bq} / {wq})', mae]
             for k in ['vgg16bn', 'mlp']:
                 x = M[(M.start == s) & (M.combo == c) & (M.model == k)].iloc[0]
@@ -178,7 +168,7 @@ def t_subgroups(t):
     return '\n'.join(lines)
 
 if __name__ == '__main__':
-    for t in ['iwi', 'nl']:
+    for t in ['iwi']:
         for name, f in [('acc', t_accuracy), ('newer', t_newer), ('enc', t_enc), ('countries', t_countries)]:
             open(f'{OUT}/tab_{t}_{name}.tex', 'w').write(f(t) + '\n')
         open(f'{OUT}/tab_{t}_area.tex', 'w').write(t_sub(t, 'area') + '\n')

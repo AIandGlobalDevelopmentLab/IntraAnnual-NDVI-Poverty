@@ -21,7 +21,7 @@ plt.rcParams.update({'figure.facecolor': SURFACE, 'axes.facecolor': SURFACE, 'sa
 MODELS = ['resnet18', 'resnet34', 'resnet50', 'swin', 'unet', 'vit', 'satclip', 'satclip_only', 'mosaiks', 'olmoearth',
           'vgg16bn', 'mlp']
 MLAB = dict(LAB); MLAB['unet'] = 'U-Net'; MLAB['olmoearth'] = 'OlmoEarth'; MLAB['mlp'] = 'MLP (band statistics)'
-REFLAB = {'iwi': 'Landsat + NL', 'nl': 'Landsat'}
+REFLAB = {'iwi': 'Landsat + NL'}
 
 def forest(ax, y, d, low, high, color, marker='o', s=34, clip=None):
     d, low, high, y = (np.asarray(v, dtype=float) for v in (d, low, high, y))
@@ -77,7 +77,7 @@ def encodings_figure(t):
             ax.set_yticks(y); ax.set_yticklabels([MLAB[m] for m in MODELS])
             ax.tick_params(axis='y', length=0)
         start = 'Pretrained' if s == 'pretrained' else 'From scratch'
-        target = 'IWI' if t == 'iwi' else 'NL'
+        target = 'IWI'
         fig.suptitle(f'{target}, {start.lower()}: gain of each NDVI encoding over {REFLAB[t]}, all 40,360 clusters',
                      x=0.01, ha='left', fontsize=10.5)
         fig.legend(handles=FILLED_OPEN, loc='lower center', ncol=2, bbox_to_anchor=(0.5, -0.06))
@@ -103,34 +103,28 @@ def country_map(t, s='scratch'):
         ax.set_title(ENCLAB[e], fontsize=9.5)
     fig.colorbar(sc, ax=list(axes.flat), shrink=0.55, extend='both',
                  label='median within-country $\\Delta R^2$ of the nine newer architectures')
-    target = 'IWI' if t == 'iwi' else 'NL'
+    target = 'IWI'
     fig.suptitle(f'{target}, from scratch: gain of each NDVI encoding over {REFLAB[t]} within each country', x=0.01, ha='left', fontsize=10.5)
     fig.savefig(f'{OUT}/{t}_country_map_{s}.png', dpi=200, bbox_inches='tight')
     plt.close(fig)
 
-# ---------------------------------------------------------------- 3. country forest plot, IWI and NL (new)
+# ---------------------------------------------------------------- 3. country forest plot (new)
 def country_forest():
     G = pd.read_csv(REV / 'subset_gains.csv')
     c = G[(G.stype == 'country') & (G.enc == 'mean4') & (G.start == 'scratch')]
-    I = c[c.target == 'iwi'].set_index('subset'); N = c[c.target == 'nl'].set_index('subset')
+    I = c[c.target == 'iwi'].set_index('subset')
     order = I.sort_values('relMSE', ascending=False).index.tolist()     # best at the top
     name = {'Congo - Kinshasa': 'DR Congo', 'Côte d’Ivoire': "Côte d'Ivoire"}
     y = np.arange(len(order))
-    fig, axes = plt.subplots(1, 2, figsize=(9.6, 9.0), sharey=True, constrained_layout=True,
-                             gridspec_kw={'width_ratios': [1, 1]})
-    for ax, T, title, clip in [(axes[0], I, '(a) IWI', None), (axes[1], N, '(b) NL', (-0.6, 1.0))]:
-        T = T.reindex(order)
-        ax.axvline(0, color=SECONDARY, linewidth=0.9); ax.grid(axis='x')
-        forest(ax, y, 100 * T.relMSE, 100 * T.rel_lo, 100 * T.rel_hi, BLUE if title.startswith('(a)') else ORANGE, s=26,
-               clip=None if clip is None else (100 * clip[0], 100 * clip[1]))
-        ax.set_title(title, fontsize=10)
-        ax.set_xlabel('relative change in MSE (%)')
-        if clip is not None: ax.set_xlim(100 * clip[0] - 3, 100 * clip[1] + 3)
-        ax.tick_params(axis='y', length=0)
-    axes[0].set_yticks(y); axes[0].set_yticklabels([f'{name.get(k, k)} ({int(I.loc[k, "n"]):,})' for k in order], fontsize=7.5)
-    fig.suptitle('From scratch: change in the within-country MSE when an NDVI encoding is added\n'
-                 '(nine newer architectures, mean of the four encodings; negative = more accurate)',
-                 x=0.01, ha='left', fontsize=10)
+    fig, ax = plt.subplots(figsize=(6.0, 7.0), constrained_layout=True)
+    T = I.reindex(order)
+    ax.axvline(0, color=SECONDARY, linewidth=0.9); ax.grid(axis='x')
+    forest(ax, y, 100 * T.relMSE, 100 * T.rel_lo, 100 * T.rel_hi, BLUE, s=26)
+    ax.set_xlabel('relative change in MSE (%)')
+    ax.tick_params(axis='y', length=0)
+    ax.set_yticks(y); ax.set_yticklabels([f'{name.get(k, k)} ({int(I.loc[k, "n"]):,})' for k in order], fontsize=7.5)
+    fig.suptitle('IWI from scratch: change in the within-country MSE when an NDVI encoding is added\n'
+                 '(nine newer architectures, mean of the four encodings; negative = more accurate)', x=0.01, ha='left', fontsize=9.5)
     fig.legend(handles=FILLED_OPEN, loc='lower center', ncol=2, bbox_to_anchor=(0.5, -0.035))
     fig.savefig(f'{OUT}/country_forest_scratch.png', dpi=200, bbox_inches='tight')
     plt.close(fig)
@@ -140,9 +134,9 @@ CLIM = ['Tropical savanna (Aw, As)', 'Semi-arid steppe (BS)', 'Tropical humid (A
 CLIMLAB = {'Tropical savanna (Aw, As)': 'Savanna\n(Aw, As)', 'Semi-arid steppe (BS)': 'Steppe\n(BS)',
            'Tropical humid (Af, Am)': 'Humid\n(Af, Am)', 'Arid desert (BW)': 'Desert\n(BW)', 'Temperate (C)': 'Temperate\n(C)'}
 def period_climate():
-    Y = pd.read_csv(REV / 'years_climate.csv'); G = pd.read_csv(REV / 'subset_gains.csv')
+    Y = pd.read_csv(REV / 'years_climate.csv')
     bins = ['2003-08', '2009-11', '2012', '2013', '2014-16', '2017-19', '2020-23']
-    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.1), constrained_layout=True, gridspec_kw={'width_ratios': [1.25, 1, 1]})
+    fig, axes = plt.subplots(1, 2, figsize=(10.2, 4.1), constrained_layout=True, gridspec_kw={'width_ratios': [1.25, 1]})
     ax = axes[0]
     for s, col, mk, dx in [('scratch', BLUE, 'o', -0.12), ('pretrained', ORANGE, 's', 0.12)]:
         x = Y[(Y.target == 'iwi') & (Y.start == s) & (Y.stype == 'year')].set_index('subset').reindex(bins)
@@ -163,40 +157,12 @@ def period_climate():
     ax.axhline(0, color=SECONDARY, linewidth=0.9); ax.grid(axis='y')
     ax.set_xticks(range(len(CLIM))); ax.set_xticklabels([CLIMLAB[c] for c in CLIM])
     ax.set_title('(b) IWI by climate zone, from scratch', fontsize=10)
-    # (c) NL climate, both starts
-    ax = axes[2]
-    for s, col, mk, dx in [('scratch', BLUE, 'o', -0.12), ('pretrained', ORANGE, 's', 0.12)]:
-        x = G[(G.target == 'nl') & (G.start == s) & (G.stype == 'climate') & (G.enc == 'mean4')].set_index('subset').reindex(CLIM)
-        forest_v(ax, np.arange(len(CLIM)) + dx, 100 * x.relMSE, 100 * x.rel_lo, 100 * x.rel_hi, col, marker=mk, s=30)
-    ax.axhline(0, color=SECONDARY, linewidth=0.9); ax.grid(axis='y')
-    ax.set_xticks(range(len(CLIM))); ax.set_xticklabels([CLIMLAB[c] for c in CLIM])
-    ax.set_title('(c) NL by climate zone', fontsize=10)
     for a in axes:
         for lab in a.get_xticklabels(): lab.set_fontsize(7.5)
-    h = [Line2D([], [], marker='o', linestyle='none', color=BLUE, label='(a), (c): from scratch;  (b): DMSP period'),
-         Line2D([], [], marker='s', linestyle='none', color=ORANGE, label='(a), (c): pretrained;  (b): VIIRS period')] + FILLED_OPEN
-    fig.legend(handles=h, loc='lower center', ncol=4, bbox_to_anchor=(0.5, -0.09))
+    h = [Line2D([], [], marker='o', linestyle='none', color=BLUE, label='(a): from scratch;  (b): DMSP period'),
+         Line2D([], [], marker='s', linestyle='none', color=ORANGE, label='(a): pretrained;  (b): VIIRS period')] + FILLED_OPEN
+    fig.legend(handles=h, loc='lower center', ncol=2, bbox_to_anchor=(0.5, -0.17))
     fig.savefig(f'{OUT}/period_climate.png', dpi=200, bbox_inches='tight')
-    plt.close(fig)
-
-# ---------------------------------------------------------------- 5. IWI and NL side by side (new)
-def side_by_side():
-    fig, axes = plt.subplots(1, 2, figsize=(10.5, 3.3), sharey=True, constrained_layout=True)
-    y = np.arange(len(ENC))[::-1]
-    for ax, t, title in [(axes[0], 'iwi', '(a) IWI: gain over Landsat + NL'), (axes[1], 'nl', '(b) NL: gain over Landsat')]:
-        S = pd.read_csv(ev(t, 'summary_bootstrap.csv')); S = S[(S.subset == 'all') & (S.quantity == f'nine: mean gain over {REF[t]}')]
-        for s, col, mk, dy in [('scratch', BLUE, 'o', 0.13), ('pretrained', ORANGE, 's', -0.13)]:
-            x = S[S.start == s].set_index('combo').reindex([combo(t, e) for e in ENC])
-            forest(ax, y + dy, x.estimate, x.low, x.high, col, marker=mk, s=34)
-        ax.axvline(0, color=SECONDARY, linewidth=0.9); ax.grid(axis='x')
-        ax.set_title(title, fontsize=10); ax.set_xlabel('nine-model mean $\\Delta R^2$ (95% interval)')
-        ax.set_xlim(-0.095, 0.085)
-        ax.tick_params(axis='y', length=0)
-    axes[0].set_yticks(y); axes[0].set_yticklabels([ENCLAB[e] for e in ENC])
-    h = [Line2D([], [], marker='o', linestyle='none', color=BLUE, label='from scratch'),
-         Line2D([], [], marker='s', linestyle='none', color=ORANGE, label='pretrained')] + FILLED_OPEN
-    fig.legend(handles=h, loc='lower center', ncol=4, bbox_to_anchor=(0.5, -0.13))
-    fig.savefig(f'{OUT}/iwi_nl_side_by_side.png', dpi=200, bbox_inches='tight')
     plt.close(fig)
 
 # ---------------------------------------------------------------- 6. study area by climate zone (new)
@@ -220,14 +186,11 @@ def climate_map():
     plt.close(fig)
 
 if __name__ == '__main__':
-    for t in ['iwi', 'nl']:
-        encodings_figure(t)
-        if CL is not None:
-            country_map(t)
-    country_forest(); period_climate(); side_by_side()
+    encodings_figure('iwi')
+    country_forest(); period_climate()
     if CL is not None:
-        climate_map()
+        country_map('iwi'); climate_map()
     else:
-        print(f'{CLUSTERS_CSV} not found: the maps (Figures S1, S3 and S4) need the cluster coordinates; '
+        print(f'{CLUSTERS_CSV} not found: the maps (Figures S1 and S3) need the cluster coordinates; '
               'run analysis/subset_gains.py on the cluster-level predictions first')
     print(sorted(os.listdir(OUT)))

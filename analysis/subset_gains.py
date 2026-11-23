@@ -1,12 +1,11 @@
-"""Where does intra-annual NDVI help? Gains of the NDVI encodings in subsets of clusters (IWI and NL experiments).
+"""Where does intra-annual NDVI help? Gains of the NDVI encodings for wealth (IWI) in subsets of clusters.
 
-For each target (iwi, nl), start, encoding (and the mean of the four), and subset of clusters, computes
+For each start, encoding (and the mean of the four), and subset of clusters, computes
 - base R2 of the nine newer architectures (mean over models, within the subset),
 - nine-model mean dR2 within the subset, with a 95% interval (1,000 paired Poisson(1) resamples of spatial groups),
 - nine-model mean relative change in MSE (dMSE / MSE of the reference input), with interval,
 - dR2 of VGG-16-BN and of the MLP, with intervals.
-Subsets: all, rural/urban, sensor period, period x area, Koppen climate group, NL tercile within period (lights),
-and every country. Writes subset_gains.csv, subset_gains_clusters.csv and D.pkl (used by the other scripts) to $ANALYSIS_OUT
+Subsets: all, rural/urban, sensor period, period x area, Koppen climate group and every country. Writes subset_gains.csv, subset_gains_clusters.csv and D.pkl (used by the other scripts) to $ANALYSIS_OUT
 (default results/analysis). The last two hold cluster-level DHS data: keep them out of the repository.
 Usage: python subset_gains.py   (needs numpy, pandas, scipy and kgcpy: pip install kgcpy)
 """
@@ -15,13 +14,11 @@ from pathlib import Path
 import os
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
-# evaluation folders written by notebook 16 of each experiment, and the folder for the outputs of these scripts
+# evaluation folder written by notebook 16, and the folder for the outputs of these scripts
 IWI_EVAL = Path(os.environ.get('IWI_EVAL_DIR', REPO / 'results' / 'iwi'))
-NL_EVAL = Path(os.environ.get('NL_EVAL_DIR', REPO / 'results' / 'nl'))
 OUT = Path(os.environ.get('ANALYSIS_OUT', REPO / 'results' / 'analysis')); OUT.mkdir(parents=True, exist_ok=True)
 
 IWI = IWI_EVAL / 'eval_test_predictions.csv.gz'
-NL = NL_EVAL / 'eval_test_predictions.csv.gz'
 NINE = ['resnet18', 'resnet34', 'resnet50', 'swin', 'unet', 'vit', 'satclip', 'mosaiks', 'olmoearth']
 BASEL = ['vgg16bn', 'mlp']
 ENC = ['wavelet', 'DFT', 'peak:pixel11/wavelet6', 'TT:cyclic']
@@ -42,19 +39,10 @@ def climate_group(z):
     return 'Other'
 
 def load():
-    I = pd.read_csv(IWI)
-    N = pd.read_csv(NL, usecols=lambda c: c in ('cluster_id', 'nl') or c.startswith('ten_models|'))
-    N = N.rename(columns={c: 'NL::' + c for c in N.columns if c.startswith('ten_models|')})
-    D = I.merge(N, on='cluster_id', how='inner')
-    assert len(D) == len(I) == len(N)
+    D = pd.read_csv(IWI)
     D['rural'] = D['rural'].astype(str).str.lower().eq('true')
     D['kz'] = [koppen(a, b) for a, b in zip(D['lat'], D['lon'])]
     D['climate'] = D['kz'].map(climate_group)
-    # NL terciles within each sensor period (dark / middle / bright), from the NL target
-    D['lights'] = ''
-    for s, g in D.groupby('nl_sensor'):
-        q = g['nl'].rank(pct=True)
-        D.loc[g.index, 'lights'] = np.where(q <= 1 / 3, 'dark third', np.where(q <= 2 / 3, 'middle third', 'bright third'))
     return D
 
 def subsets(D):
@@ -64,16 +52,12 @@ def subsets(D):
     S += [('period x area', f'{p} {a}', ((D['nl_sensor'] == p) & (D['rural'] == (a == 'rural'))).to_numpy())
           for p in ('DMSP', 'VIIRS') for a in ('rural', 'urban')]
     S += [('climate', c, (D['climate'] == c).to_numpy()) for c in sorted(D['climate'].unique())]
-    S += [('lights', l, (D['lights'] == l).to_numpy()) for l in ('dark third', 'middle third', 'bright third')]
-    S += [('lights x area', f'{l} {a}', ((D['lights'] == l) & (D['rural'] == (a == 'rural'))).to_numpy())
-          for l in ('dark third', 'bright third') for a in ('rural', 'urban')]
     S += [('country', c, (D['country'] == c).to_numpy()) for c in sorted(D['country'].unique())]
     return S
 
-def run(D, target, out_rows):
+def run(D, out_rows, target='iwi'):
     y = D[target].to_numpy(float)
-    pre = '' if target == 'iwi' else 'NL::'
-    base = 'L+NL' if target == 'iwi' else 'L'
+    base = 'L+NL'                                       # reference input: Landsat + nighttime lights
     g = pd.factorize(D['group'])[0]; G = g.max() + 1
     rng = np.random.default_rng(SEED)
     Wg = np.vstack([np.ones((1, G)), rng.poisson(1.0, size=(B, G))]).astype(np.float64)   # row 0 = point estimate
@@ -81,7 +65,7 @@ def run(D, target, out_rows):
         cols, names = [], []
         for m in NINE + BASEL:
             for c in [base] + [f'{base}+{e}' for e in ENC]:
-                cols.append(D[f'{pre}ten_models|{m}|{c}|{start}'].to_numpy(float)); names.append((m, c))
+                cols.append(D[f'ten_models|{m}|{c}|{start}'].to_numpy(float)); names.append((m, c))
         Pm = np.column_stack(cols)                      # n x runs
         for stype, sname, mask in subsets(D):
             if mask.sum() < 30: continue
@@ -130,9 +114,8 @@ def run(D, target, out_rows):
 if __name__ == '__main__':
     D = load()
     D.to_pickle(OUT / 'D.pkl')
-    D[['cluster_id', 'country', 'lat', 'lon', 'year', 'rural', 'nl_sensor', 'kz', 'climate', 'lights', 'iwi', 'nl']].to_csv(
+    D[['cluster_id', 'country', 'lat', 'lon', 'year', 'rural', 'nl_sensor', 'kz', 'climate', 'iwi']].to_csv(
         OUT / 'subset_gains_clusters.csv', index=False)
     rows = []
-    for t in ('iwi', 'nl'):
-        run(D, t, rows)
+    run(D, rows)
     pd.DataFrame(rows).to_csv(OUT / 'subset_gains.csv', index=False)

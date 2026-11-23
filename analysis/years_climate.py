@@ -6,7 +6,7 @@ sys.path.insert(0, str(HERE))
 from gainlib import Gains
 D = pd.read_pickle(OUT / 'D.pkl')
 out = []
-for t in ('iwi', 'nl'):
+for t in ('iwi',):
     G = Gains(D, t)
     yb = pd.cut(D['year'], [2000, 2002, 2008, 2011, 2012, 2013, 2016, 2019, 2023],
                 labels=['2001', '2003-08', '2009-11', '2012', '2013', '2014-16', '2017-19', '2020-23'])

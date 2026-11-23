@@ -5,7 +5,6 @@ These are the outputs behind the tables and figures of the paper. They contain n
 | folder | written by |
 |---|---|
 | `iwi/` | the evaluation notebooks 16–18 and `evaluation/iwi/summary_bootstrap.py` |
-| `nl/` | the evaluation notebooks 16–18 and the scripts in `evaluation/nl/` |
 | `analysis/` | the scripts in `analysis/` |
 
 ## Main files
@@ -19,10 +18,8 @@ These are the outputs behind the tables and figures of the paper. They contain n
 | `summary_bootstrap.csv` | means over the nine newer architectures, with 95% intervals |
 | `rural_urban_*.csv` | the same comparisons within rural and urban clusters |
 | `country_*.csv` | per-country results and the clear gains and losses per encoding |
-| `nl/overall_by_period.csv` | NL metrics within the DMSP and the VIIRS period |
-| `nl/mae_bootstrap.csv`, `analysis/iwi_mae.csv` | changes in MAE |
-| `nl/repeated_runs.csv` | run-to-run variation of two configurations that were trained twice |
-| `analysis/subset_gains.csv` | gains by area, sensor period, climate zone, NL tercile and country |
+| `analysis/iwi_mae.csv` | changes in MAE |
+| `analysis/subset_gains.csv` | gains by area, sensor period, climate zone and country |
 | `analysis/years_climate.csv`, `within_country_period.csv` | survey-year bins, climate zones and the within-country period split |
 | `analysis/country_covariates.csv`, `country_decomp.csv`, `case_studies.csv` | country traits, the MSE decomposition and the case studies |
 

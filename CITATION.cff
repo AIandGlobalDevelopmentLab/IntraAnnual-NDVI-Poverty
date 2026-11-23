@@ -9,7 +9,7 @@ authors:
     family-names: Solska
   - given-names: Adel
     family-names: Daoud
-repository-code: "https://github.com/AIandGlobalDevelopmentLab/IntraAnnual-NDVI-wavelet-Poverty"
+repository-code: "https://github.com/AIandGlobalDevelopmentLab/IntraAnnual-NDVI-Poverty"
 license: MIT
 keywords:
   - poverty mapping

@@ -1,17 +1,15 @@
 """Shared names and number formats for the tables and figures of the paper.
 
 Inputs (override with environment variables):
-  IWI_EVAL_DIR   evaluation outputs of the IWI experiment (notebooks 16-18)   default: results/iwi
-  NL_EVAL_DIR    evaluation outputs of the NL experiment                      default: results/nl
-  ANALYSIS_OUT   outputs of the scripts in analysis/                         default: results/analysis
+  IWI_EVAL_DIR   evaluation outputs (notebooks 16-18, evaluation/iwi)   default: results/iwi
+  ANALYSIS_OUT   outputs of the scripts in analysis/                    default: results/analysis
 """
 import os
 import pandas as pd, numpy as np
 from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
-EVAL = {'iwi': Path(os.environ.get('IWI_EVAL_DIR', REPO / 'results' / 'iwi')),
-        'nl': Path(os.environ.get('NL_EVAL_DIR', REPO / 'results' / 'nl'))}
+EVAL = {'iwi': Path(os.environ.get('IWI_EVAL_DIR', REPO / 'results' / 'iwi'))}
 REV = Path(os.environ.get('ANALYSIS_OUT', REPO / 'results' / 'analysis'))
 def ev(t, name): return EVAL[t] / name
 LAB = {'resnet18': 'ResNet-18', 'resnet34': 'ResNet-34', 'resnet50': 'ResNet-50', 'swin': 'Swin v2-B',
@@ -22,7 +20,7 @@ ENC = ['wavelet', 'DFT', 'peak:pixel11/wavelet6', 'TT:cyclic']
 ENCLAB = {'wavelet': 'Wavelet, 6 bands', 'DFT': 'Fourier, 5 bands', 'peak:pixel11/wavelet6': 'Peak-aligned wavelet, 6 bands',
           'TT:cyclic': 'Temporal transformer'}
 ENCSHORT = {'wavelet': 'Wavelet', 'DFT': 'Fourier', 'peak:pixel11/wavelet6': 'Peak-aligned wavelet', 'TT:cyclic': 'Temporal transformer'}
-REF = {'iwi': 'L+NL', 'nl': 'L'}
+REF = {'iwi': 'L+NL'}                   # reference input: Landsat + nighttime lights
 def combo(t, e): return REF[t] if e is None else f'{REF[t]}+{e}'
 def f3(x, sign=True):
     if x is None or (isinstance(x, float) and not np.isfinite(x)): return '--'

@@ -1,13 +1,12 @@
-"""Shared helpers: nine-model mean gains of the NDVI encodings in any subset of clusters, with paired bootstrap."""
+"""Shared helpers: nine-model mean gains of the NDVI encodings for IWI in any subset of clusters, with paired bootstrap."""
 import numpy as np, pandas as pd
 from subset_gains import load, NINE, BASEL, ENC, B, SEED
 
 class Gains:
-    def __init__(self, D, target):
+    def __init__(self, D, target='iwi'):
         self.D, self.target = D, target
         self.y = D[target].to_numpy(float)
-        pre = '' if target == 'iwi' else 'NL::'
-        self.base = 'L+NL' if target == 'iwi' else 'L'
+        self.base = 'L+NL'                              # reference input: Landsat + nighttime lights
         g = pd.factorize(D['group'])[0]; self.g, self.G = g, g.max() + 1
         rng = np.random.default_rng(SEED)
         self.Wg = np.vstack([np.ones((1, self.G)), rng.poisson(1.0, size=(B, self.G))]).astype(np.float64)
@@ -15,7 +14,7 @@ class Gains:
         for start in ('scratch', 'pretrained'):
             for m in NINE + BASEL:
                 for c in [self.base] + [f'{self.base}+{e}' for e in ENC]:
-                    self.P[(start, m, c)] = D[f'{pre}ten_models|{m}|{c}|{start}'].to_numpy(float)
+                    self.P[(start, m, c)] = D[f'ten_models|{m}|{c}|{start}'].to_numpy(float)
 
     def _w(self, v, k):
         return self.Wg @ np.bincount(self.g[k], weights=v, minlength=self.G)
